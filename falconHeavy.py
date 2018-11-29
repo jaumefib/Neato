@@ -33,7 +33,7 @@ def polars_escalars(punts):
 			print(r)
 		x = math.cos(angle)*r
 		y = math.sin(angle)*r
-		llista.append([x,y])
+		llista.append([x, y])
 	return  llista
 
 
@@ -219,7 +219,7 @@ if __name__ == '__main__':
 			print("########################")
 
 		# Si el laser esta activat
-		if b:
+		if b and tecla == 'm':
 			L_act, R_act = get_motors(ser)
 			odometry(L_act, R_act)
 			punts = trans_l_to_w(polars_escalars(get_laser(ser)))
