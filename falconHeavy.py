@@ -22,6 +22,7 @@ from select import select
 from test_NeatoCommands import envia
 from falconHeavyLaser import enable_laser
 from falconHeavyLaser import get_laser
+from corners import *
 
 
 def polars_escalars(punts):
@@ -29,8 +30,8 @@ def polars_escalars(punts):
 	for l in punts:
 		angle = float(l[0])*math.pi/180
 		r = float(l[1])
-		if r != 0:
-			print(r)
+		#if r != 0:
+		#	print(r)
 		x = math.cos(angle)*r
 		y = math.sin(angle)*r
 		llista.append([x, y])
@@ -42,6 +43,8 @@ def trans_l_to_w(punts):
 	for l in punts:
 		x_est = math.cos(theta_word)*l[0] - math.sin(theta_word)*l[1] + x_word
 		y_est = math.sin(theta_word)*l[0] + math.cos(theta_word)*l[1] + y_word
+		# Afegit per comprobar que no generi punts (0, 0)
+		print("x: " + str(x_est) + " y: " + str(y_est))
 		llista.append([x_est, y_est])
 	return llista
 
@@ -103,7 +106,7 @@ if __name__ == '__main__':
 	fitxer = "vista_robot.txt"
 	if os.path.exists(fitxer):	
 		os.remove(fitxer)	
-	f = open(fitxer, "a+")	
+	f = open(fitxer, "a+")
 	
 	L_ini, R_ini = get_motors(ser)
 	L_ant, R_ant = L_ini, R_ini
@@ -199,6 +202,18 @@ if __name__ == '__main__':
 			else:
 				b = True
 			enable_laser(ser, b)
+		elif tecla == 'g':
+
+			punts = clean(punts)
+			punts = corners(punts)
+			punts = cluster(punts)
+
+			#print("Cantonades: ")
+			#print(str(punts))
+
+			#get2cluster(punts, x_word, y_word)  # agafar els dos punts més propers amb distancia entre ells x
+
+
 
 		if tecla == 'w' or tecla == 'a' or tecla == 's' or tecla == 'd' or tecla == 'p':
 
