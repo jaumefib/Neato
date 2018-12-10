@@ -25,6 +25,29 @@ from falconHeavyLaser import get_laser
 from corners import *
 
 
+def gotoPoint(goto_x, goto_y):
+	L_act, R_act = get_motors(ser)
+	odometry(L_act, R_act)
+	distance = math.sqrt(math.pow(goto_x - x_word, 2) + math.pow(goto_y - y_word,2))
+	while distance > 120:
+		L_act, R_act = get_motors(ser)
+		odometry(L_act, R_act)
+
+		diff = math.atan2(goto_x - x_word, goto_y - y_word) - theta_word
+		direc = ((diff + math.pi) % (2*math.pi)) - math.pi
+		distance = math.sqrt(math.pow(goto_x - x_word, 2) + math.pow(goto_y - y_word,2))
+
+		velocity = 100
+
+		dist_R = (velocity + (S*0.6*direc))
+		dist_L = (velocity + (-S*0.6*direc))
+
+		print(distance, x_word, y_word)
+		set_motors(dist_L, dist_R, velocity)
+
+	print("Arrived at the destination")
+
+
 def polars_escalars(punts):
 	llista = []
 	for l in punts:
@@ -35,7 +58,7 @@ def polars_escalars(punts):
 		x = math.cos(angle)*r
 		y = math.sin(angle)*r
 		llista.append([x, y])
-	return  llista
+	return llista
 
 
 def trans_l_to_w(punts):
@@ -61,6 +84,11 @@ def get_motors(ser):
 	l = int(msg[4].split(',')[1])
 	r = int(msg[8].split(',')[1])
 	return l, r
+
+
+def set_motors(L, R, velocity):
+	order = 'SetMotor LWheelDist ' + str(L) + ' RWheelDist ' + str(R) + ' Speed ' + str(velocity)
+	msg = envia(ser, order)
 
 
 def odometry(L_act, R_act):
@@ -195,6 +223,7 @@ if __name__ == '__main__':
 			distancia_R = 0
 			envia(ser,'SetMotor LWheelDisable RWheelDisable', 0.2)
 			envia(ser,'SetMotor RWheelEnable LWheelEnable', 0.2)
+
 		elif tecla == 'l':
 
 			if b:
@@ -202,18 +231,28 @@ if __name__ == '__main__':
 			else:
 				b = True
 			enable_laser(ser, b)
+
 		elif tecla == 'g':
 
 			punts = clean(punts)
 			punts = corners(punts)
 			punts = cluster(punts)
 
-			#print("Cantonades: ")
-			#print(str(punts))
+			print("Cantonades: ")
+			print(str(punts))
+
+			b = False
+			for i in punts:
+				for j in punts:
+					dist = math.sqrt(math.pow(i[0] - j[0], 2) + math.pow(i[1] - j[1],2))
+					if dist > 500:
+						gotoPoint((i[0]+j[0])/2, (i[1]+j[1])/2)
+						b = True
+						break
+				if b:
+					break
 
 			#get2cluster(punts, x_word, y_word)  # agafar els dos punts més propers amb distancia entre ells x
-
-
 
 		if tecla == 'w' or tecla == 'a' or tecla == 's' or tecla == 'd' or tecla == 'p':
 
