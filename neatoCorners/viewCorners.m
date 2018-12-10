@@ -1,4 +1,5 @@
-close all;
+%close all;
+figure
 %% Posició del laser del Neato
 Robot= [-50 -100 0 1;150 0 0 1;-50 100 0 1]'; % The Robot icon is a triangle
 patch(Robot(1,:), Robot(2,:), 'b');
