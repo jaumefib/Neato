@@ -26,5 +26,5 @@ end
 if length(c) >= 1
     scatter(c(:,1),c(:,2),'r');
 end
-axis([-2000 2000 -2000 2000])
+axis([-4000 4000 -4000 4000])
 hold off;

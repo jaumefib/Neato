@@ -3,10 +3,13 @@ import math
 
 def clean(punts):
     llista = []
-    for i in range(290, 359):  # 290, 359
+    # 0 (centre): 350-10
+    # 1 (esquerra): 80-100
+    # 2 (dreta): 280-260
+    for i in range(290, 359):  # 290, 359 # 300, 359
         if punts[i][0] != 0 and punts[i][1] != 0:
             llista.append(punts[i])
-    for i in range(0, 90):  # 0 , 70
+    for i in range(0, 90):  # 0 , 70 # 0, 60
         if punts[i][0] != 0 and punts[i][1] != 0:
             llista.append(punts[i])
     print(llista)
@@ -28,7 +31,7 @@ def corners(points):
             pas3 = math.sqrt(ux ** 2 + uy ** 2) * math.sqrt(vx ** 2 + vy ** 2)
             pas1 = pas2 / pas3
             beta = math.acos(pas1) * (180 / math.pi)
-            if (beta > 60 and beta < 120) or (beta > 240 and beta < 300):
+            if (60 < beta < 120) or (240 < beta < 300):
                 xy.append(points[i+w/2])
     return xy
 
@@ -43,6 +46,3 @@ def cluster(points):
         if cont < 3:  # 4
             points.remove(i)
     return points
-
-
-

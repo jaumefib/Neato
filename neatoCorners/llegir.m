@@ -1,5 +1,5 @@
 function pos = llegir()
-fid = fopen("entrada1358.txt");
+fid = fopen("entrada1248.txt");
 fitxer = fscanf(fid, '%s');
 linies = split(fitxer, ';');
 x = [];

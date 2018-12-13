@@ -25,12 +25,12 @@ from falconHeavyLaser import get_laser
 from corners import *
 
 
-def gotoPoint(goto_x, goto_y):
-	L_act, R_act = get_motors(ser)
+'''def gotoPoint(goto_x, goto_y):
+	L_act, R_act = get_motors()
 	odometry(L_act, R_act)
-	distance = math.sqrt(math.pow(goto_x - x_word, 2) + math.pow(goto_y - y_word,2))
+	distance = math.sqrt(math.pow(goto_x - x_word, 2) + math.pow(goto_y - y_word, 2))
 	while distance > 120:
-		L_act, R_act = get_motors(ser)
+		L_act, R_act = get_motors()
 		odometry(L_act, R_act)
 
 		diff = math.atan2(goto_x - x_word, goto_y - y_word) - theta_word
@@ -46,9 +46,73 @@ def gotoPoint(goto_x, goto_y):
 		set_motors(dist_L, dist_R, velocity)
 
 	print("Arrived at the destination")
+'''
+
+def stop_motors():
+	direccion = 0
+	speed = 0
+	tita_dot = 0
+	distancia_L = 0
+	distancia_R = 0
+	envia(ser, 'SetMotor LWheelDisable RWheelDisable', 0.2)
+	envia(ser, 'SetMotor RWheelEnable LWheelEnable', 0.2)
 
 
-def polars_escalars(punts):
+def gotoPoint(goto_x, goto_y):
+	# velocity = how_far * 0.5
+	velocity = 150  # en mm/s
+	tita_dot = 0
+	tiempo = 20
+	direccion = 0
+
+	L_act, R_act = get_motors()
+	odometry(L_act, R_act)
+
+	# robot orientation
+	distance = math.sqrt(math.pow(goto_x - x_word, 2) + math.pow(goto_y - y_word, 2))
+	targetAngle = math.atan2(goto_x - x_word, goto_y - y_word) - theta_word
+
+	distancia_R = (((velocity * pow(-1, direccion)) + (S * targetAngle)) * tiempo)
+	distancia_L = (((velocity * pow(-1, direccion)) + (-S * targetAngle)) * tiempo)
+
+	print(distance, x_word, y_word)
+	print(targetAngle)
+	set_motors(distancia_L, distancia_R, velocity)
+
+	# go up
+
+	while abs(distance) > 120:
+		L_act, R_act = get_motors()
+		odometry(L_act, R_act)
+
+		diff = math.atan2(goto_x - x_word, goto_y - y_word) - theta_word
+		direc = ((diff + math.pi) % (2 * math.pi)) - math.pi
+		distance = math.sqrt(math.pow(goto_x - x_word, 2) + math.pow(goto_y - y_word, 2))
+
+		velocity = 100
+
+		dist_R = (velocity + (S * 0.6 * direc))
+		dist_L = (velocity + (-S * 0.6 * direc))
+
+		print(distance, x_word, y_word)
+		set_motors(dist_L, dist_R, velocity)
+
+		L_act, R_act = get_motors()
+		odometry(L_act, R_act)
+
+		distance = math.sqrt(math.pow(goto_x - x_word, 2) + math.pow(goto_y - y_word, 2))
+
+		distancia_R = (((velocity * pow(-1, direccion)) + (S * tita_dot)) * tiempo) * pow(-1, 0)
+		distancia_L = (((velocity * pow(-1, direccion)) + (-S * tita_dot)) * tiempo) * pow(-1, 0)
+
+		print(targetAngle)
+		print(distance, x_word, y_word)
+		set_motors(distancia_L, distancia_R, velocity)
+	# stop_motors()
+	print  ("\n FINISH")
+
+
+def polars_escalars(punts):  # Passa de coord. polars a coord. escalars
 	llista = []
 	for l in punts:
 		angle = float(l[0])*math.pi/180
@@ -61,7 +125,7 @@ def polars_escalars(punts):
 	return llista
 
 
-def trans_l_to_w(punts):
+def trans_l_to_w(punts):  # Transforma de coord. del Làser a coord. del World
 	llista = []
 	for l in punts:
 		x_est = math.cos(theta_word)*l[0] - math.sin(theta_word)*l[1] + x_word
@@ -72,12 +136,12 @@ def trans_l_to_w(punts):
 	return llista
 
 
-def guardar_punts(punts, f):
+def guardar_punts(punts):  # Guarda els punts el fitxer vista_robot.txt
 	for xy in punts:
 		f.write(str(xy[0])+","+str(xy[1])+";\n")
 
 
-def get_motors(ser):
+def get_motors():
 	""" Ask to the robot for the current state of the motors. """
 	msg = envia(ser, 'GetMotors LeftWheel RightWheel').split('\n')
 	# For better understanding see the neato commands PDF.
@@ -121,29 +185,29 @@ def getch():
 
 # Crida a la funcio main
 if __name__ == '__main__':
-	
-	# Open the Serial Port.
-	global ser
-	global x_word, y_word, dist
+	global ser, f
+	global x_word, y_word, dist, theta_word
 	L_ini = R_ini = suma_theta = 0
-	x_word = y_word = theta_word = dist = 0
+	x_word = y_word = theta_word = dist = 0.0
 	L, R = 0, 0
+	# Open the Serial Port.
 	ser = serial.Serial(port='/dev/ttyACM0', baudrate=115200, timeout=1)
 	# ser = serial.Serial(port='/dev/ttyAMA0', baudrate=115200, timeout=1)
+	punts = []
 	
 	fitxer = "vista_robot.txt"
 	if os.path.exists(fitxer):	
 		os.remove(fitxer)	
 	f = open(fitxer, "a+")
 	
-	L_ini, R_ini = get_motors(ser)
+	L_ini, R_ini = get_motors()
 	L_ant, R_ant = L_ini, R_ini
 
-	envia(ser,'TestMode On', 0.2)
+	envia(ser, 'TestMode On', 0.2)
 
-	envia(ser,'PlaySound 1', 0.3)
+	envia(ser, 'PlaySound 1', 0.3)
 
-	envia(ser,'SetMotor RWheelEnable LWheelEnable', 0.2)
+	envia(ser, 'SetMotor RWheelEnable LWheelEnable', 0.2)
 
 	# Parametros Robot.
 	S = 121.5		# en mm
@@ -191,15 +255,15 @@ if __name__ == '__main__':
 
 			if speed == 0:
 
-				envia(ser,'SetMotor LWheelDisable RWheelDisable', 0.2)
-				envia(ser,'SetMotor RWheelEnable LWheelEnable', 0.2)
+				envia(ser, 'SetMotor LWheelDisable RWheelDisable', 0.2)
+				envia(ser, 'SetMotor RWheelEnable LWheelEnable', 0.2)
 
 			else:
 				distancia_R = (((speed * pow(-1, direccion) ) + (S * tita_dot)) * tiempo) * pow(-1, direccion)
 				distancia_L = (((speed * pow(-1, direccion) ) + (-S * tita_dot)) * tiempo) * pow(-1, direccion)
 
 				comando = 'SetMotor LWheelDist ' + str(distancia_L) + ' RWheelDist ' + str(distancia_R) + ' Speed ' + str(speed * pow(-1, direccion))
-				envia(ser,comando, 0.2)
+				envia(ser, comando, 0.2)
 
 		elif tecla == 'd' or tecla == 'a':
 
@@ -212,19 +276,19 @@ if __name__ == '__main__':
 			distancia_L = (((speed * pow(-1, direccion) ) + (-S * tita_dot)) * tiempo) * pow(-1, direccion)
 
 			comando = 'SetMotor LWheelDist ' + str(distancia_L) + ' RWheelDist ' + str(distancia_R) + ' Speed ' + str(speed * pow(-1, direccion))
-			envia(ser,comando, 0.2)
+			envia(ser, comando, 0.2)
 
-		elif tecla == 'p':
+		elif tecla == 'p':  # Parada de motors
 
 			direccion = 0
 			speed = 0
 			tita_dot = 0
 			distancia_L = 0
 			distancia_R = 0
-			envia(ser,'SetMotor LWheelDisable RWheelDisable', 0.2)
-			envia(ser,'SetMotor RWheelEnable LWheelEnable', 0.2)
+			envia(ser, 'SetMotor LWheelDisable RWheelDisable', 0.2)
+			envia(ser, 'SetMotor RWheelEnable LWheelEnable', 0.2)
 
-		elif tecla == 'l':
+		elif tecla == 'l':  # Activar el laser
 
 			if b:
 				b = False
@@ -232,7 +296,7 @@ if __name__ == '__main__':
 				b = True
 			enable_laser(ser, b)
 
-		elif tecla == 'g':
+		elif tecla == 'g':  # Anar al punt mig entre dues cantonades
 
 			punts = clean(punts)
 			punts = corners(punts)
@@ -241,22 +305,23 @@ if __name__ == '__main__':
 			print("Cantonades: ")
 			print(str(punts))
 
+			distEntrePunts = 500  # 800
 			b = False
 			for i in punts:
 				for j in punts:
-					dist = math.sqrt(math.pow(i[0] - j[0], 2) + math.pow(i[1] - j[1],2))
-					if dist > 500:
-						gotoPoint((i[0]+j[0])/2, (i[1]+j[1])/2)
+					dist = math.sqrt(math.pow(i[0] - j[0], 2) + math.pow(i[1] - j[1], 2))
+					if dist > distEntrePunts:
+						print("Triats: " + str(i) + " " + str(j))
+						print("Desti: " + str((i[0]+j[0])/2) + " " + str((i[1]+j[1])/2))
+						gotoPoint(1000, 1000)
 						b = True
 						break
 				if b:
 					break
 
-			#get2cluster(punts, x_word, y_word)  # agafar els dos punts més propers amb distancia entre ells x
-
 		if tecla == 'w' or tecla == 'a' or tecla == 's' or tecla == 'd' or tecla == 'p':
 
-			L_act, R_act = get_motors(ser)
+			L_act, R_act = get_motors()
 			odometry(L_act, R_act)
 
 			print("########################")
@@ -272,13 +337,13 @@ if __name__ == '__main__':
 				print("Direction: backward.")
 			print("########################")
 
-		# Si el laser esta activat
-		if b and tecla == 'm':
-			L_act, R_act = get_motors(ser)
+		if b and tecla == 'm':  # Si el laser esta activat, guardar punts detectats pel laser
+
+			L_act, R_act = get_motors()
 			odometry(L_act, R_act)
 			punts = trans_l_to_w(polars_escalars(get_laser(ser)))
-			guardar_punts(punts, f)
 			print("laser scan finished")
+			guardar_punts(punts)
 
 	f.close()
 
